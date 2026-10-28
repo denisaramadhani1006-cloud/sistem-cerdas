@@ -1,0 +1,241 @@
+﻿nomor_sel,jenis_sel,isi_sel,output
+1,code,"# This Python 3 environment comes with many helpful analytics libraries installed
+# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python
+# For example, here's several helpful packages to load
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+
+# Input data files are available in the read-only ""../input/"" directory
+# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using ""Save & Run All"" 
+# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session","/kaggle/input/titanic/train.csv
+/kaggle/input/titanic/test.csv
+/kaggle/input/titanic/gender_submission.csv
+"
+2,code,"import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+%matplotlib inline
+import seaborn as sns",
+3,code,"train= pd.read_csv(""/kaggle/input/titanic/train.csv"")
+test = pd.read_csv(""/kaggle/input/titanic/test.csv"")
+submission_gender = pd.read_csv(""/kaggle/input/titanic/gender_submission.csv"")",
+4,code,train.head(),"   PassengerId  Survived  Pclass  \
+0            1         0       3   
+1            2         1       1   
+2            3         1       3   
+3            4         1       1   
+4            5         0       3   
+
+                                                Name     Sex   Age  SibSp  \
+0                            Braund, Mr. Owen Harris    male  22.0      1   
+1  Cumings, Mrs. John Bradley (Florence Briggs Th...  female  38.0      1   
+2                             Heikkinen, Miss. Laina  female  26.0      0   
+3       Futrelle, Mrs. Jacques Heath (Lily May Peel)  female  35.0      1   
+4                           Allen, Mr. William Henry    male  35.0      0   
+
+   Parch            Ticket     Fare Cabin Embarked  
+0      0         A/5 21171   7.2500   NaN        S  
+1      0          PC 17599  71.2833   C85        C  
+2      0  STON/O2. 3101282   7.9250   NaN        S  
+3      0            113803  53.1000  C123        S  
+4      0            373450   8.0500   NaN        S  "
+5,code,train.isnull(),"     PassengerId  Survived  Pclass   Name    Sex    Age  SibSp  Parch  Ticket  \
+0          False     False   False  False  False  False  False  False   False   
+1          False     False   False  False  False  False  False  False   False   
+2          False     False   False  False  False  False  False  False   False   
+3          False     False   False  False  False  False  False  False   False   
+4          False     False   False  False  False  False  False  False   False   
+..           ...       ...     ...    ...    ...    ...    ...    ...     ...   
+886        False     False   False  False  False  False  False  False   False   
+887        False     False   False  False  False  False  False  False   False   
+888        False     False   False  False  False   True  False  False   False   
+889        False     False   False  False  False  False  False  False   False   
+890        False     False   False  False  False  False  False  False   False   
+
+      Fare  Cabin  Embarked  
+0    False   True     False  
+1    False  False     False  
+2    False   True     False  
+3    False  False     False  
+4    False   True     False  
+..     ...    ...       ...  
+886  False   True     False  
+887  False  False     False  
+888  False   True     False  
+889  False  False     False  
+890  False   True     False  
+
+[891 rows x 12 columns]"
+6,code,"sns.heatmap(train.isnull(),yticklabels=False,cbar=False,cmap='viridis')","<AxesSubplot:>
+<Figure size 640x480 with 1 Axes>"
+7,code,"sns.set_style('whitegrid')
+sns.countplot(x='Survived',hue='Sex',data=train,palette='RdBu_r')","<AxesSubplot:xlabel='Survived', ylabel='count'>
+<Figure size 640x480 with 1 Axes>"
+8,code,"sns.set_style('whitegrid')
+sns.countplot(x='Survived',data=train)","<AxesSubplot:xlabel='Survived', ylabel='count'>
+<Figure size 640x480 with 1 Axes>"
+9,code,"sns.set_style('whitegrid')
+sns.countplot(x='Survived',hue='Pclass',data=train,palette='rainbow')","<AxesSubplot:xlabel='Survived', ylabel='count'>
+<Figure size 640x480 with 1 Axes>"
+10,code,"sns.displot(train['Age'].dropna(),kde=False,color='darkred',bins=40)","<seaborn.axisgrid.FacetGrid at 0x7e1a7a943750>
+<Figure size 500x500 with 1 Axes>"
+11,code,"train['Age'].hist(bins=30,color='darkred',alpha=0.3)","<AxesSubplot:>
+<Figure size 640x480 with 1 Axes>"
+12,code,"sns.countplot(x='SibSp',data=train)","<AxesSubplot:xlabel='SibSp', ylabel='count'>
+<Figure size 640x480 with 1 Axes>"
+13,code,"train['Fare'].hist(color='green',bins=40,figsize=(8,4))","<AxesSubplot:>
+<Figure size 800x400 with 1 Axes>"
+14,code,"plt.figure(figsize=(12,7))
+sns.boxplot(x='Pclass',y='Age',data=train,palette='winter')","<AxesSubplot:xlabel='Pclass', ylabel='Age'>
+<Figure size 1200x700 with 1 Axes>"
+15,code,"def impute_age(cols):
+    Age=cols[0]
+    Pclass=cols[1]
+    
+    if pd.isnull(Age):
+        
+        if Pclass == 1:
+            return 37
+        
+        elif Pclass ==2:
+            return 29
+        
+        else:
+            return 24
+    else:
+        return Age",
+16,markdown,,
+17,code,"train['Age']=train[['Age','Pclass']].apply(impute_age,axis=1)",
+18,code,"sns.heatmap(train.isnull(),yticklabels=False,cbar=False,cmap='viridis')","<AxesSubplot:>
+<Figure size 640x480 with 1 Axes>"
+19,code,"train.drop('Cabin',axis=1,inplace=True)",
+20,code,train.head(),"   PassengerId  Survived  Pclass  \
+0            1         0       3   
+1            2         1       1   
+2            3         1       3   
+3            4         1       1   
+4            5         0       3   
+
+                                                Name     Sex   Age  SibSp  \
+0                            Braund, Mr. Owen Harris    male  22.0      1   
+1  Cumings, Mrs. John Bradley (Florence Briggs Th...  female  38.0      1   
+2                             Heikkinen, Miss. Laina  female  26.0      0   
+3       Futrelle, Mrs. Jacques Heath (Lily May Peel)  female  35.0      1   
+4                           Allen, Mr. William Henry    male  35.0      0   
+
+   Parch            Ticket     Fare Embarked  
+0      0         A/5 21171   7.2500        S  
+1      0          PC 17599  71.2833        C  
+2      0  STON/O2. 3101282   7.9250        S  
+3      0            113803  53.1000        S  
+4      0            373450   8.0500        S  "
+21,code,train.dropna(inplace=True),
+22,markdown,,
+23,code,train.info(),"<class 'pandas.core.frame.DataFrame'>
+Int64Index: 889 entries, 0 to 890
+Data columns (total 11 columns):
+ #   Column       Non-Null Count  Dtype  
+---  ------       --------------  -----  
+ 0   PassengerId  889 non-null    int64  
+ 1   Survived     889 non-null    int64  
+ 2   Pclass       889 non-null    int64  
+ 3   Name         889 non-null    object 
+ 4   Sex          889 non-null    object 
+ 5   Age          889 non-null    float64
+ 6   SibSp        889 non-null    int64  
+ 7   Parch        889 non-null    int64  
+ 8   Ticket       889 non-null    object 
+ 9   Fare         889 non-null    float64
+ 10  Embarked     889 non-null    object 
+dtypes: float64(2), int64(5), object(4)
+memory usage: 83.3+ KB
+"
+24,code,"pd.get_dummies(train['Embarked'],drop_first=True).head()","   Q  S
+0  0  1
+1  0  0
+2  0  1
+3  0  1
+4  0  1"
+25,code,"sex =pd.get_dummies(train['Sex'],drop_first=True)
+embark=pd.get_dummies(train['Embarked'],drop_first=True)",
+26,code,"train.drop(['Sex','Embarked','Name','Ticket'],axis=1,inplace=True)",
+27,code,train.head(),"   PassengerId  Survived  Pclass   Age  SibSp  Parch     Fare
+0            1         0       3  22.0      1      0   7.2500
+1            2         1       1  38.0      1      0  71.2833
+2            3         1       3  26.0      0      0   7.9250
+3            4         1       1  35.0      1      0  53.1000
+4            5         0       3  35.0      0      0   8.0500"
+28,code,"train = pd.concat([train,sex,embark],axis=1)",
+29,code,train.head(),"   PassengerId  Survived  Pclass   Age  SibSp  Parch     Fare  male  Q  S
+0            1         0       3  22.0      1      0   7.2500     1  0  1
+1            2         1       1  38.0      1      0  71.2833     0  0  0
+2            3         1       3  26.0      0      0   7.9250     0  0  1
+3            4         1       1  35.0      1      0  53.1000     0  0  1
+4            5         0       3  35.0      0      0   8.0500     1  0  1"
+30,code,"train.drop('Survived',axis=1).head()","   PassengerId  Pclass   Age  SibSp  Parch     Fare  male  Q  S
+0            1       3  22.0      1      0   7.2500     1  0  1
+1            2       1  38.0      1      0  71.2833     0  0  0
+2            3       3  26.0      0      0   7.9250     0  0  1
+3            4       1  35.0      1      0  53.1000     0  0  1
+4            5       3  35.0      0      0   8.0500     1  0  1"
+31,code,train['Survived'].head(),"0    0
+1    1
+2    1
+3    1
+4    0
+Name: Survived, dtype: int64"
+32,code,from sklearn.model_selection import train_test_split,
+33,code,"X_train, X_test,y_train,y_test = train_test_split(train.drop('Survived',axis=1),train['Survived'], test_size=0.30,random_state=101)",
+34,code,from sklearn.linear_model import LogisticRegression,
+35,code,"logmodel = LogisticRegression()
+logmodel.fit(X_train,y_train)","/opt/conda/lib/python3.7/site-packages/sklearn/linear_model/_logistic.py:818: ConvergenceWarning: lbfgs failed to converge (status=1):
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+  extra_warning_msg=_LOGISTIC_SOLVER_CONVERGENCE_MSG,
+
+LogisticRegression()"
+36,code,prediction = logmodel.predict(X_test),
+37,code,from sklearn.metrics import confusion_matrix,
+38,code,"accuracy = confusion_matrix(y_test,prediction)",
+39,code,accuracy,"array([[149,  14],
+       [ 39,  65]])"
+40,code,from sklearn.metrics import accuracy_score,
+41,code,"accuracy = accuracy_score(y_test,prediction)
+accuracy",0.8014981273408239
+42,code,prediction,"array([0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1,
+       1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+       0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0,
+       0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0,
+       1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1,
+       0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0,
+       0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0,
+       0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0,
+       1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0,
+       0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+       0, 1, 1])"
+43,code,from sklearn.metrics import classification_report,
+44,code,"print(classification_report(y_test,prediction))","              precision    recall  f1-score   support
+
+           0       0.79      0.91      0.85       163
+           1       0.82      0.62      0.71       104
+
+    accuracy                           0.80       267
+   macro avg       0.81      0.77      0.78       267
+weighted avg       0.80      0.80      0.80       267
+
+"
+45,code,,
